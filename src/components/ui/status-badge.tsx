@@ -20,7 +20,7 @@ export function StatusBadge({ status, className }: { status: PaymentStatus; clas
   return (
     <span
       className={cn(
-        "inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium",
+        "inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-xs font-medium",
         TONE[status],
         className,
       )}

@@ -90,13 +90,14 @@ function isPayment(body: unknown): body is PaymentRequest {
   return typeof body === "object" && body !== null && "qr_payload" in body && "history" in body;
 }
 
-export function Playground() {
+export function Playground({ gateway: provided }: { gateway?: Gateway } = {}) {
   const ids = { op: useId(), path: useId(), key: useId(), body: useId() };
   const [env, setEnv] = useState<Env>("demo");
   const [events, setEvents] = useState<RecordedEvent[]>([]);
-  const [gateway] = useState<Gateway>(() =>
-    createLocalGateway({ latencyMs: 180, onEvent: (e) => setEvents((list) => [e, ...list].slice(0, 30)) }),
+  const [gateway] = useState<Gateway>(
+    () => provided ?? createLocalGateway({ latencyMs: 180, onEvent: (e) => setEvents((list) => [e, ...list].slice(0, 30)) }),
   );
+  const local = gateway.kind === "local";
   // A fixed key for the first render: random values cannot be read while prerendering.
   const [draft, setDraft] = useState<Draft>(() => template("create", "demo", null, "order-1042"));
   const [response, setResponse] = useState<(GatewayResponse & { key: string }) | null>(null);
@@ -282,9 +283,13 @@ export function Playground() {
             <div className="flex gap-3">
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
               <div className="text-sm leading-relaxed">
-                <p className="font-medium text-text">Testnet is not available in this playground.</p>
+                <p className="font-medium text-text">
+                  {local ? "Testnet is not available in this playground." : "Testnet depends on this server's configuration."}
+                </p>
                 <p className="mt-1 text-muted">
-                  This playground runs in your browser. Verifying a real testnet payment needs a Yola server with:
+                  {local
+                    ? "This playground runs in your browser. Verifying a real testnet payment needs a Yola server with:"
+                    : "Testnet requests go to this Yola server. They succeed only if the operator has set up:"}
                 </p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
                   <li>a Zebra node synced to testnet, with a Zaino indexer in front of it</li>
@@ -322,7 +327,7 @@ export function Playground() {
         >
           <div className="flex items-center justify-between">
             <h2 className="type-heading text-lg">Request</h2>
-            <span className="text-xs text-muted">Runs against the in-browser simulator</span>
+            <span className="text-xs text-muted">{local ? "Runs against the in-browser simulator" : "Runs against this project on the server"}</span>
           </div>
 
           <div>
@@ -558,6 +563,7 @@ export function Playground() {
             </ul>
           )}
 
+          {local ? (
           <div className="mt-6 border-t border-line pt-4">
             <h2 className="text-sm text-text">Webhook events</h2>
             <p className="mt-1 text-xs text-faint">What a server would send. Recorded here, not delivered.</p>
@@ -574,6 +580,15 @@ export function Playground() {
               </ul>
             )}
           </div>
+          ) : (
+            <p className="mt-6 border-t border-line pt-4 text-xs text-muted">
+              Webhook events for these requests are delivered to your endpoints. See{" "}
+              <Link href="/dashboard/developers/webhooks" className="text-brand-soft hover:underline">
+                Webhooks
+              </Link>{" "}
+              for delivery logs.
+            </p>
+          )}
         </section>
       </div>
     </div>
