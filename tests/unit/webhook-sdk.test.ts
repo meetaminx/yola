@@ -61,7 +61,7 @@ describe("YolaClient", () => {
     );
     const yola = new YolaClient({ apiKey: "ysk_test", fetch: fetchMock });
     await expect(
-      yola.paymentRequests.create({ amount: "1", currency: "ZEC", network: "testnet", destination: "u1abc" }),
+      yola.paymentRequests.create({ amount: "1", currency: "ZEC", network: "testnet" }),
     ).rejects.toMatchObject({ status: 422, code: "network_mismatch", requestId: "req_9" });
   });
 

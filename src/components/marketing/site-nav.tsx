@@ -13,7 +13,8 @@ const LINKS = [
   { href: "/#product", label: "Product" },
   { href: "/#integration", label: "Developers" },
   { href: "/docs", label: "Documentation" },
-  { href: "/#demo", label: "Playground" },
+  { href: "/playground", label: "Playground" },
+  { href: "/examples/store", label: "Sample store" },
 ];
 
 export function SiteNav() {

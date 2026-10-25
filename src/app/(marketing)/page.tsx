@@ -65,7 +65,7 @@ export default function HomePage() {
               <ButtonLink href="/docs/quickstart" size="lg">
                 Start building
               </ButtonLink>
-              <ButtonLink href="/#demo" size="lg" variant="secondary">
+              <ButtonLink href="/playground" size="lg" variant="secondary">
                 Explore the playground
               </ButtonLink>
             </div>
@@ -165,7 +165,7 @@ export default function HomePage() {
             <h2 className="type-display text-[clamp(2.4rem,5.5vw,4.5rem)]">Your next product can accept ZEC.</h2>
             <p className="mt-5 text-lg text-muted">Start with a payment request. Build the rest your way.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href="/#demo" size="lg">
+              <ButtonLink href="/playground" size="lg">
                 Open playground
               </ButtonLink>
               <ButtonLink href="/docs" size="lg" variant="secondary">

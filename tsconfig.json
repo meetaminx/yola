@@ -20,7 +20,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@yola/sdk": ["./src/sdk/index.ts"]
+      "@yola/sdk": ["./src/sdk/index.ts"],
+      "@yola/sdk/react": ["./src/sdk/react/index.ts"]
     }
   },
   "include": [

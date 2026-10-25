@@ -3,7 +3,11 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
-    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+    alias: [
+      { find: "@yola/sdk/react", replacement: fileURLToPath(new URL("./src/sdk/react/index.ts", import.meta.url)) },
+      { find: "@yola/sdk", replacement: fileURLToPath(new URL("./src/sdk/index.ts", import.meta.url)) },
+      { find: "@", replacement: fileURLToPath(new URL("./src", import.meta.url)) },
+    ],
   },
   test: {
     include: ["tests/unit/**/*.test.ts"],

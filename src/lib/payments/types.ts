@@ -71,6 +71,8 @@ export interface PaymentRequest {
   description: string | null;
   /** Your own order or invoice ID, echoed back in webhooks. */
   external_reference: string | null;
+  /** Your key/value pairs, echoed back. Never shown to the customer or put in the QR. */
+  metadata: Record<string, string>;
   status: PaymentStatus;
   created_at: string;
   expires_at: string;
@@ -83,7 +85,25 @@ export interface PaymentRequest {
   confirmations: { observed: number; required: number } | null;
   /** Amount actually observed, when known. */
   amount_received_zatoshis: string | null;
-  /** Transaction ID once the backend has observed it. In demo mode prefixed "sim_". */
+  /** Transaction ID once the backend has observed it. In demo mode prefixed "sim_tx_". */
   transaction_id: string | null;
+  /** Last time anything about the request changed. */
+  updated_at: string;
   history: StatusEvent[];
+}
+
+/** Lightweight polling response from GET /payment-requests/:id/status. */
+export interface PaymentStatusResponse {
+  id: string;
+  status: PaymentStatus;
+  network: Network;
+  trust_level: TrustLevel;
+  amount: string;
+  amount_received: string | null;
+  confirmations: PaymentRequest["confirmations"];
+  transaction_id: string | null;
+  expires_at: string;
+  updated_at: string;
+  /** True when nothing further will happen without new evidence or an operator. */
+  final: boolean;
 }

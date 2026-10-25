@@ -1,16 +1,14 @@
 /**
- * @yola/sdk — server-side TypeScript client for the Yola API (v1).
+ * @yola/sdk: server-side TypeScript client for the Yola API (v1).
  *
- * Status: the client is implemented and unit-tested against the v1 contract.
- * The /api/v1 route handlers it calls arrive in Stage 3 of the build.
- *
- * Secret keys (ysk_…) must stay on your server. The constructor refuses
- * to run with a secret key in a browser.
+ * Secret keys (ysk_...) must stay on your server. The constructor refuses
+ * to run with a secret key in a browser. For browser UI, use
+ * @yola/sdk/react, which talks to your own server, never to Yola directly.
  */
-import type { Network, PaymentRequest, PaymentStatus } from "@/lib/payments/types";
+import type { Network, PaymentRequest, PaymentStatus, PaymentStatusResponse } from "./types";
 import { parseZec } from "@/lib/payments/amount";
 
-export type { Network, PaymentRequest, PaymentStatus };
+export type * from "./types";
 export { verifySignature as verifyWebhookSignature } from "@/lib/webhooks/signature";
 
 export interface YolaClientOptions {
@@ -28,12 +26,8 @@ export interface CreatePaymentRequestParams {
   amount: string;
   currency: "ZEC";
   network: Network;
-  /**
-   * Optional. On testnet and mainnet Yola normally derives a fresh shielded
-   * address for each request from the project's incoming viewing key, so you
-   * omit this. Ignored in demo mode.
-   */
-  destination?: string;
+  // No destination: Yola derives a unique receiving address per request
+  // from your project's incoming viewing key.
   description?: string;
   external_reference?: string;
   /** Seconds until the request expires. */
@@ -41,19 +35,17 @@ export interface CreatePaymentRequestParams {
   metadata?: Record<string, string>;
 }
 
+export type SimulateAction = "pay" | "pay_partial" | "pay_extra" | "mine_block" | "reorg" | "expire";
+
+export interface PaymentRequestList {
+  data: PaymentRequest[];
+  has_more: boolean;
+  next_cursor: string | null;
+}
+
 export interface RequestOptions {
   /** Retry-safe creation. Reusing a key with different parameters returns 409. */
   idempotencyKey?: string;
-}
-
-export interface PaymentStatusResponse {
-  id: string;
-  status: PaymentStatus;
-  network: Network;
-  trust_level: PaymentRequest["trust_level"];
-  confirmations: PaymentRequest["confirmations"];
-  transaction_id: string | null;
-  updated_at: string;
 }
 
 export interface ApiErrorBody {
@@ -89,7 +81,7 @@ export class YolaClient {
     if (!options.apiKey) throw new Error("YolaClient: apiKey is required.");
     if (typeof window !== "undefined" && options.apiKey.startsWith("ysk_")) {
       throw new Error(
-        "YolaClient: a secret key (ysk_…) was used in a browser. Create payment requests on your server instead.",
+        "YolaClient: a secret key (ysk_...) was used in a browser. Create payment requests on your server instead.",
       );
     }
     this.#apiKey = options.apiKey;
@@ -170,12 +162,18 @@ class PaymentRequestsResource {
     return this.client.request("POST", `/payment-requests/${encodeURIComponent(id)}/cancel`);
   }
 
-  list(params?: { status?: PaymentStatus; limit?: number; starting_after?: string }) {
+  list(params?: { status?: PaymentStatus; network?: Network; limit?: number; starting_after?: string }) {
     const qs = new URLSearchParams();
     if (params?.status) qs.set("status", params.status);
+    if (params?.network) qs.set("network", params.network);
     if (params?.limit) qs.set("limit", String(params.limit));
     if (params?.starting_after) qs.set("starting_after", params.starting_after);
     const suffix = qs.size ? `?${qs}` : "";
-    return this.client.request<{ data: PaymentRequest[]; has_more: boolean }>("GET", `/payment-requests${suffix}`);
+    return this.client.request<PaymentRequestList>("GET", `/payment-requests${suffix}`);
+  }
+
+  /** Demo network only: act as the customer's wallet or the network. */
+  simulate(id: string, action: SimulateAction): Promise<PaymentRequest> {
+    return this.client.request("POST", `/payment-requests/${encodeURIComponent(id)}/simulate`, { action });
   }
 }
