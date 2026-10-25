@@ -1,26 +1,252 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────
+   Yola design tokens
+   Raw palette → semantic roles. Components use the semantic roles.
+   ───────────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Palette */
+  --yola-obsidian: #08090d;
+  --yola-graphite: #11131a;
+  --yola-graphite-2: #171a23;
+  --yola-violet: #8b5cf6;
+  --yola-ultraviolet: #6d28d9;
+  --yola-lavender: #c4b5fd;
+  --yola-lime: #c7f36b;
+  --yola-white: #f8fafc;
+  --yola-slate: #9298a8;
+  --yola-green: #4ade80;
+  --yola-coral: #fb7185;
+  --yola-amber: #fbbf24;
+
+  /* Semantic roles */
+  --bg: var(--yola-obsidian);
+  --surface: var(--yola-graphite);
+  --surface-raised: var(--yola-graphite-2);
+  --line: rgb(248 250 252 / 0.08);
+  --line-strong: rgb(248 250 252 / 0.14);
+  --text: var(--yola-white);
+  --text-muted: var(--yola-slate);
+  --text-faint: rgb(146 152 168 / 0.7);
+  --brand: var(--yola-violet);
+  --brand-deep: var(--yola-ultraviolet);
+  --brand-soft: var(--yola-lavender);
+  --signal: var(--yola-lime);
+  --success: var(--yola-green);
+  --danger: var(--yola-coral);
+  --warning: var(--yola-amber);
+  --focus: var(--yola-lavender);
+
+  /* Radius hierarchy: page panels > controls > chips */
+  --radius-panel: 18px;
+  --radius-control: 10px;
+  --radius-chip: 999px;
+
+  /* Motion duration tokens (mirrored in src/components/motion/tokens.ts) */
+  --dur-instant: 90ms;
+  --dur-quick: 160ms;
+  --dur-base: 240ms;
+  --dur-slow: 480ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-soft: var(--brand-soft);
+  --color-signal: var(--signal);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --radius-panel: var(--radius-panel);
+  --radius-control: var(--radius-control);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--bg);
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgb(139 92 246 / 0.4);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Display type: tight, deliberate */
+.type-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+}
+.type-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+
+/* A panel: the structural unit. Border carries the structure, not shadow. */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  box-shadow: inset 0 1px 0 rgb(248 250 252 / 0.04);
+}
+
+/* The rail: Yola's signature line */
+.rail-line {
+  background: linear-gradient(90deg, transparent, var(--brand) 12%, var(--brand) 88%, transparent);
+  height: 1px;
+}
+
+/* Masked shielded value */
+.masked {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(196 181 253 / 0.22) 0 2px,
+    transparent 2px 5px
+  );
+  color: transparent;
+  border-radius: 4px;
+  user-select: none;
+}
+
+/* Ambient light: one source, top of the hero. Not on every card. */
+.ambient {
+  background:
+    radial-gradient(60% 50% at 70% 0%, rgb(109 40 217 / 0.22), transparent 70%),
+    radial-gradient(40% 30% at 15% 10%, rgb(139 92 246 / 0.08), transparent 70%);
+}
+
+.grid-texture {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(70% 60% at 60% 30%, black, transparent 75%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Documentation prose */
+.doc-prose {
+  color: rgb(248 250 252 / 0.86);
+  font-size: 16px;
+  line-height: 1.75;
+}
+.doc-prose > * + * {
+  margin-top: 1.1em;
+}
+.doc-prose h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  color: var(--text);
+  margin-top: 2.6em;
+  padding-top: 1.4em;
+  border-top: 1px solid var(--line);
+}
+.doc-prose h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: var(--text);
+  margin-top: 2em;
+}
+.doc-prose a {
+  color: var(--brand-soft);
+  text-underline-offset: 3px;
+}
+.doc-prose a:hover {
+  text-decoration: underline;
+}
+.doc-prose ul,
+.doc-prose ol {
+  padding-left: 1.25em;
+}
+.doc-prose ul {
+  list-style: disc;
+}
+.doc-prose ol {
+  list-style: decimal;
+}
+.doc-prose li + li {
+  margin-top: 0.4em;
+}
+.doc-prose li::marker {
+  color: var(--text-faint);
+}
+.doc-prose :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0.1em 0.35em;
+  color: var(--text);
+}
+.doc-prose strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.doc-prose table {
+  width: 100%;
+  font-size: 14px;
+  border-collapse: collapse;
+}
+.doc-prose th,
+.doc-prose td {
+  text-align: left;
+  padding: 0.55em 0.75em;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.doc-prose th {
+  color: var(--text-muted);
+  font-weight: 400;
 }

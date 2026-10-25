@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Yola
 
-## Getting Started
+**Zcash payments. Built for builders.**
+Everything developers need to accept ZEC. One integration at a time.
 
-First, run the development server:
+Yola is noncustodial developer infrastructure for accepting ZEC: payment
+requests, ZIP 321 QR codes, status tracking and signed webhooks.
+
+> Pre-release. Production deployment requires a security review, threat
+> modelling and testing. Mainnet is disabled.
+
+## Run it
+
+Requires Node.js 20+ and pnpm.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev            # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Development server |
+| `pnpm build && pnpm start` | Production build and server |
+| `pnpm test` | Unit tests (Vitest) |
+| `pnpm typecheck` | Strict TypeScript |
+| `pnpm lint` | ESLint |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Build status
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Stage | Scope | Status |
+|---|---|---|
+| 1. Visual experience | Brand tokens, motion system, landing page, hero rail, live demo, docs shell | **Done** |
+| 2. Functional demo | Playground route, sample store, `<YolaPaymentStatus />` | Next |
+| 3. Backend | Postgres + Prisma, `/api/v1`, auth, idempotency, webhook delivery | Planned |
+| 4. Zcash | Zebra + Zaino + viewing-key scanner on testnet | Planned |
+| 5. Developer experience | Full docs, examples, e2e tests, deployment guide | Planned |
+| 6. Polish | Accessibility and responsive audit, motion tuning | Planned |
 
-## Learn More
+Already working and tested in Stage 1: exact amount parsing (bigint
+zatoshis), the evidence-gated payment state machine, the demo adapter,
+the ZIP 321 URI builder (checked against the spec's own example), address
+prefix classification including ZIP 316 Revision 2, webhook HMAC
+signatures, and the SDK client.
 
-To learn more about Next.js, take a look at the following resources:
+## Routes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `/` — landing page with the live simulator (`/#demo`)
+- `/docs` — introduction
+- `/docs/quickstart`, `/docs/api`, `/docs/sdks`, `/docs/qr`,
+  `/docs/webhooks`, `/docs/testnet`, `/docs/security`, `/docs/architecture`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## How payments are verified
 
-## Deploy on Vercel
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short: each request
+gets its own diversified shielded address derived from the merchant's
+incoming viewing key; a scanner over Zebra + Zaino trial-decrypts outputs,
+and the address identifies the request. Memos are never used for
+attribution. zcashd is end-of-life and not supported.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Layout
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+  app/(marketing)/      landing page
+  app/docs/             documentation
+  components/ui/        buttons, code blocks, status and environment badges
+  components/motion/    duration tokens, named transitions, reduced-motion provider
+  components/marketing/ nav, payment rail, features, integration tabs, footer
+  components/payments/  live demo
+  components/qr/        QR rendering and PNG/SVG download
+  lib/payments/         amounts, state machine, types, demo adapter
+  lib/zcash/            address classification, ZIP 321, adapter capability contract
+  lib/webhooks/         HMAC signatures
+  lib/content/          code snippets shared by landing page and docs
+  sdk/                  TypeScript client (import as @yola/sdk)
+tests/unit/             Vitest
+docs/ARCHITECTURE.md    verification decision record
+```
+
+Fonts (Space Grotesk, Inter, JetBrains Mono) are self-hosted from
+`src/app/fonts`, so builds never depend on a font CDN.
