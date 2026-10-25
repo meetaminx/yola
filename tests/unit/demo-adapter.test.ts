@@ -7,7 +7,7 @@ import {
   simulateIncomingPayment,
   simulateReorg,
 } from "@/lib/payments/demo-adapter";
-import { canConfirmRealPayments, DEMO_ADAPTER, TESTNET_ADAPTER_UNCONFIGURED } from "@/lib/zcash/adapter";
+import { canConfirmRealPayments, DEMO_ADAPTER, TESTNET_ADAPTER_SCANNER, TESTNET_ADAPTER_UNCONFIGURED } from "@/lib/zcash/adapter";
 
 const create = () => createDemoPaymentRequest({ amountZatoshis: 1_000_000n, description: "Test" });
 
@@ -72,5 +72,6 @@ describe("demo adapter", () => {
   it("adapters cannot confirm real payments without real capabilities", () => {
     expect(canConfirmRealPayments(DEMO_ADAPTER)).toBe(false);
     expect(canConfirmRealPayments(TESTNET_ADAPTER_UNCONFIGURED)).toBe(false);
+    expect(canConfirmRealPayments(TESTNET_ADAPTER_SCANNER)).toBe(true);
   });
 });

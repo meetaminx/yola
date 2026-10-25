@@ -76,11 +76,7 @@ export const DEMO_ADAPTER: AdapterDescription = {
   ],
 };
 
-/**
- * Testnet adapter, as described before infrastructure is configured.
- * Stage 4 replaces "not_configured" with real support once a Zebra + Zaino
- * backend and a view-only wallet scanner are wired up and tested.
- */
+/** Testnet adapter on a server where the scanner is not configured. */
 export const TESTNET_ADAPTER_UNCONFIGURED: AdapterDescription = {
   id: "zcash-testnet",
   network: "testnet",
@@ -100,5 +96,35 @@ export const TESTNET_ADAPTER_UNCONFIGURED: AdapterDescription = {
   limitations: [
     "Needs a Zebra node, a Zaino indexer and a view-only scanner holding the merchant's incoming viewing key.",
     "Until those are configured and checked, testnet requests cannot be verified.",
+  ],
+};
+
+/**
+ * Testnet adapter backed by the Yola scanner (scanner/), as built and tested
+ * in this repository. "supported" here means: implemented with the official
+ * Zcash crates and covered by tests with real keys and real note encryption.
+ * It does not mean it has been run against a live testnet from this
+ * repository's CI; see docs/TESTNET.md for what has and has not been verified.
+ */
+export const TESTNET_ADAPTER_SCANNER: AdapterDescription = {
+  id: "zcash-testnet-scanner",
+  network: "testnet",
+  label: "Zcash testnet (Yola scanner)",
+  capabilities: {
+    addressValidation: "supported",
+    perRequestAddresses: "supported",
+    transactionLookup: "unsupported",
+    transparentPaymentDetection: "unsupported",
+    shieldedPaymentDetection: "supported",
+    amountVerification: "supported",
+    destinationVerification: "supported",
+    confirmationTracking: "supported",
+    reorgHandling: "supported",
+    mempoolDetection: "supported",
+  },
+  limitations: [
+    "Detects Sapling, Orchard and Ironwood payments. Per-request addresses have no transparent receiver, so transparent payments are not expected and not detected.",
+    "Payment detection needs the scanner to be running; a request expires only after a complete scan that began after its deadline.",
+    "Arbitrary transaction lookup by ID is not offered: only outputs that decrypt to a request's address count as evidence.",
   ],
 };

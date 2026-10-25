@@ -63,6 +63,13 @@ const schema = z
     if (env.YOLA_TESTNET_ENABLED && !env.ZCASH_BACKEND_URL) {
       ctx.addIssue({ code: "custom", path: ["ZCASH_BACKEND_URL"], message: "is required when YOLA_TESTNET_ENABLED=true" });
     }
+    if (env.YOLA_TESTNET_ENABLED && (env.ZCASH_BACKEND_AUTH_TOKEN ?? "").length < 32) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["ZCASH_BACKEND_AUTH_TOKEN"],
+        message: "must be the scanner's token (32+ characters) when YOLA_TESTNET_ENABLED=true",
+      });
+    }
     if (env.NODE_ENV === "production" && env.YOLA_WEBHOOK_ALLOW_PRIVATE_NETWORKS) {
       ctx.addIssue({
         code: "custom",

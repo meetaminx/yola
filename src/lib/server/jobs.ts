@@ -7,6 +7,8 @@ import { getEnv } from "./env";
 import { errorFields, log } from "./log";
 import { serverPaymentService } from "./payments";
 import { pruneRateLimits } from "./rate-limit";
+import { testnetScanner } from "./testnet";
+import { runTestnetScan } from "./zcash/scan-job";
 
 /**
  * Background work, run either by an in-process loop (YOLA_JOBS_MODE=inline)
@@ -20,7 +22,12 @@ import { pruneRateLimits } from "./rate-limit";
 
 // Kept on globalThis: instrumentation and route handlers are bundled
 // separately, so module-level state would not be shared between them.
-type LoopState = { lastRunAt: string | null; running: boolean; timer: ReturnType<typeof setInterval> | null };
+type LoopState = {
+  lastRunAt: string | null;
+  lastScanAt?: number;
+  running: boolean;
+  timer: ReturnType<typeof setInterval> | null;
+};
 const g = globalThis as unknown as { yolaJobs?: LoopState };
 const state: LoopState = (g.yolaJobs ??= { lastRunAt: null, running: false, timer: null });
 
@@ -32,6 +39,8 @@ export interface JobOptions {
   timeoutMs?: number;
   batchSize?: number;
   now?: () => Date;
+  /** Run the testnet scan now, ignoring its interval (tests, cron). */
+  forceScan?: boolean;
 }
 
 export async function webhookSecretFor(endpointId: string, encrypted: string) {
@@ -124,8 +133,18 @@ export async function processDelivery(prisma: Db, deliveryId: string, opts: JobO
 
 /** Expire open requests whose deadline passed, so their events go out without waiting for a read. */
 async function sweepExpired(prisma: Db, limit = 100) {
+  // Chain requests only expire once a complete scan pass began after their deadline.
+  const cursor = await prisma.chainCursor.findUnique({ where: { network: "testnet" }, select: { observedThrough: true } });
+  const now = new Date();
   const due = await prisma.paymentRequest.findMany({
-    where: { status: { in: ["awaiting_payment", "underpaid"] }, expiresAt: { lt: new Date() } },
+    where: {
+      status: { in: ["awaiting_payment", "underpaid"] },
+      expiresAt: { lt: now },
+      OR: [
+        { network: "demo" },
+        ...(cursor?.observedThrough ? [{ network: "testnet" as const, expiresAt: { lte: cursor.observedThrough } }] : []),
+      ],
+    },
     select: { id: true, projectId: true },
     take: limit,
   });
@@ -140,6 +159,21 @@ async function sweepExpired(prisma: Db, limit = 100) {
 
 let runs = 0;
 
+const SCAN_INTERVAL_MS = 10_000;
+
+/** Testnet blocks arrive about every 75 s; scanning every 10 s keeps mempool detection prompt. */
+async function maybeScanTestnet(prisma: Db, opts: JobOptions) {
+  const scanner = testnetScanner();
+  if (!scanner) return null;
+  const now = Date.now();
+  if (!opts.forceScan && state.lastScanAt && now - state.lastScanAt < SCAN_INTERVAL_MS) return null;
+  state.lastScanAt = now;
+  return runTestnetScan(prisma, scanner).catch((err) => {
+    log.error("scan.failed", errorFields(err));
+    return null;
+  });
+}
+
 export async function runJobsOnce(opts: JobOptions = {}) {
   const prisma = db();
   const ids = await claimDeliveries(prisma, opts.batchSize ?? 20);
@@ -147,6 +181,7 @@ export async function runJobsOnce(opts: JobOptions = {}) {
     log.error("webhook.process_failed", { delivery_id: id, ...errorFields(err) });
     return "error" as const;
   })));
+  const scan = await maybeScanTestnet(prisma, opts);
   const expired = await sweepExpired(prisma);
   if (runs++ % 30 === 0) {
     await pruneRateLimits(prisma);
@@ -159,6 +194,7 @@ export async function runJobsOnce(opts: JobOptions = {}) {
     retrying: outcomes.filter((o) => o === "pending").length,
     failed: outcomes.filter((o) => o === "failed").length,
     expired,
+    scan,
   };
 }
 

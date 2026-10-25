@@ -57,6 +57,11 @@ export interface PaymentServiceDeps {
   unavailableReason?: Partial<Record<Network, string>>;
   events?: PaymentEventSink;
   now?: () => Date;
+  /**
+   * How far chain evidence has been checked for a network (see isDue).
+   * Demo payments use the current time; a chain network without this never expires early.
+   */
+  observedThrough?: (network: Network) => Promise<Date | null>;
 }
 
 export const demoProvider: NetworkProvider = {
@@ -138,8 +143,8 @@ export async function fingerprint(input: ValidCreateInput): Promise<string> {
 }
 
 export class PaymentService {
-  readonly #d: Required<Omit<PaymentServiceDeps, "events" | "unavailableReason">> &
-    Pick<PaymentServiceDeps, "events" | "unavailableReason">;
+  readonly #d: Required<Omit<PaymentServiceDeps, "events" | "unavailableReason" | "observedThrough">> &
+    Pick<PaymentServiceDeps, "events" | "unavailableReason" | "observedThrough">;
 
   constructor(deps: PaymentServiceDeps) {
     this.#d = { now: () => new Date(), ...deps };
@@ -193,7 +198,9 @@ export class PaymentService {
   async list(ctx: RequestContext, q: ListQuery) {
     const { items, hasMore } = await this.#d.repo.list(ctx.projectId, q);
     const now = this.#d.now();
-    const data = await Promise.all(items.map((p) => (expireIfDue(p, now) !== p ? this.#load(ctx, p.id) : p)));
+    const data = await Promise.all(
+      items.map(async (p) => (expireIfDue(p, now, await this.#observedThrough(p, now)) !== p ? this.#load(ctx, p.id) : p)),
+    );
     return {
       status: 200,
       body: { data: data.map(serializePayment), has_more: hasMore, next_cursor: hasMore ? data.at(-1)?.id ?? null : null },
@@ -255,6 +262,11 @@ export class PaymentService {
     return provider;
   }
 
+  async #observedThrough(p: StoredPayment, now: Date): Promise<Date | null> {
+    if (p.network === "demo") return now;
+    return (await this.#d.observedThrough?.(p.network)) ?? null;
+  }
+
   /** Load a payment, applying expiry if its deadline has passed. */
   async #load(ctx: RequestContext, id: string): Promise<StoredPayment> {
     return this.#mutate(ctx, id, (p) => p, true);
@@ -271,7 +283,7 @@ export class PaymentService {
       const current = await this.#d.repo.get(ctx.projectId, id);
       if (!current) throw notFound();
       const now = this.#d.now();
-      const expired = expireIfDue(current, now);
+      const expired = expireIfDue(current, now, await this.#observedThrough(current, now));
       const next = fn(expired, now);
       if (next === current) return current;
       if (readOnly && expired === current) return current;

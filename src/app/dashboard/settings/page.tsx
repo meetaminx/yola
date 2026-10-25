@@ -7,6 +7,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { loadDashboard } from "@/lib/server/dashboard";
 import { db } from "@/lib/server/db";
 import { getEnv } from "@/lib/server/env";
+import { testnetHealth } from "@/lib/server/testnet";
 
 export const metadata = { title: "Settings" };
 
@@ -15,10 +16,13 @@ export default async function SettingsPage() {
   if (!project) return <EmptyState title="No project selected" body="Create a project first." action={<ButtonLink href="/dashboard" size="sm">Create a project</ButtonLink>} />;
 
   const env = getEnv();
-  const viewingKey = await db().viewingKey.findUnique({
-    where: { projectId_network: { projectId: project.id, network: "testnet" } },
-    select: { fingerprint: true, createdAt: true, birthdayHeight: true },
-  });
+  const [viewingKey, testnet] = await Promise.all([
+    db().viewingKey.findUnique({
+      where: { projectId_network: { projectId: project.id, network: "testnet" } },
+      select: { fingerprint: true, createdAt: true, birthdayHeight: true },
+    }),
+    env.YOLA_TESTNET_ENABLED ? testnetHealth() : Promise.resolve("disabled" as const),
+  ]);
 
   return (
     <>
@@ -42,7 +46,7 @@ export default async function SettingsPage() {
           <ViewingKeyPanel
             projectId={project.id}
             canEdit={project.role === "owner"}
-            testnetEnabled={env.YOLA_TESTNET_ENABLED}
+            testnet={testnet}
             current={viewingKey ? { fingerprint: viewingKey.fingerprint, createdAt: viewingKey.createdAt.toISOString(), birthdayHeight: viewingKey.birthdayHeight } : null}
           />
         </section>

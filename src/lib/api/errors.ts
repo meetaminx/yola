@@ -30,6 +30,7 @@ export type ApiErrorCode =
   | "network_unavailable"
   | "network_disabled"
   | "webhook_endpoint_missing"
+  | "viewing_key_required"
   | "internal_error";
 
 export interface ApiErrorBody {

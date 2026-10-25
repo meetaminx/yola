@@ -25,16 +25,24 @@ export function applyTransition<P extends PaymentRequest>(
 /** Statuses that a passing deadline closes. Anything further along is left alone. */
 const EXPIRABLE: ReadonlySet<PaymentStatus> = new Set(["awaiting_payment", "underpaid"]);
 
-export function isDue(p: PaymentRequest, now: Date): boolean {
-  return EXPIRABLE.has(p.status) && now.getTime() >= Date.parse(p.expires_at);
+/**
+ * `observedThrough` is how far the payment's evidence source has looked: a
+ * request may only expire once a look that began after its deadline found
+ * nothing. The simulator sees everything instantly (observedThrough = now);
+ * for a chain it is the start of the scanner's last complete pass, and null
+ * (never scanned) means it cannot expire yet.
+ */
+export function isDue(p: PaymentRequest, now: Date, observedThrough: Date | null = now): boolean {
+  const deadline = Date.parse(p.expires_at);
+  return EXPIRABLE.has(p.status) && now.getTime() >= deadline && observedThrough !== null && observedThrough.getTime() >= deadline;
 }
 
 /**
- * Expire a request whose deadline has passed. Driven by a real clock, so
- * it is valid for every network. Returns the input unchanged if not due.
+ * Expire a request whose deadline has passed and whose evidence source has
+ * looked past the deadline. Returns the input unchanged if not due.
  */
-export function expireIfDue<P extends PaymentRequest>(p: P, now: Date): P {
-  return isDue(p, now) ? applyTransition(p, "expired", "clock", now, "Deadline passed") : p;
+export function expireIfDue<P extends PaymentRequest>(p: P, now: Date, observedThrough: Date | null = now): P {
+  return isDue(p, now, observedThrough) ? applyTransition(p, "expired", "clock", now, "Deadline passed") : p;
 }
 
 /** Merchant cancellation. Only open requests can be cancelled. */

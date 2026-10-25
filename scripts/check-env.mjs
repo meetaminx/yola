@@ -16,6 +16,7 @@ need("YOLA_ENCRYPTION_KEY", (v) => Buffer.from(v, "base64").length === 32, "must
 need("YOLA_PUBLIC_APP_URL", (v) => { try { const u = new URL(v); return !prod || u.protocol === "https:" || ["localhost", "127.0.0.1"].includes(u.hostname); } catch { return false; } }, prod ? "must be an https:// URL" : "must be a URL");
 if (["true", "1"].includes(process.env.YOLA_MAINNET_ENABLED ?? "")) errors.push("YOLA_MAINNET_ENABLED: must be false in this release");
 if (["true", "1"].includes(process.env.YOLA_TESTNET_ENABLED ?? "") && !process.env.ZCASH_BACKEND_URL) errors.push("ZCASH_BACKEND_URL: required when YOLA_TESTNET_ENABLED=true");
+if (["true", "1"].includes(process.env.YOLA_TESTNET_ENABLED ?? "") && (process.env.ZCASH_BACKEND_AUTH_TOKEN ?? "").length < 32) errors.push("ZCASH_BACKEND_AUTH_TOKEN: the scanner's token (32+ characters) is required when YOLA_TESTNET_ENABLED=true");
 if (process.env.YOLA_JOBS_MODE === "cron" && (process.env.YOLA_CRON_SECRET ?? "").length < 32) errors.push("YOLA_CRON_SECRET: required (32+ characters) when YOLA_JOBS_MODE=cron");
 if (prod && ["true", "1"].includes(process.env.YOLA_WEBHOOK_ALLOW_PRIVATE_NETWORKS ?? "")) errors.push("YOLA_WEBHOOK_ALLOW_PRIVATE_NETWORKS: must not be enabled in production");
 if (prod && ["true", "1"].includes(process.env.YOLA_DISABLE_RATE_LIMIT ?? "")) errors.push("YOLA_DISABLE_RATE_LIMIT: must not be enabled in production");

@@ -229,6 +229,8 @@ model PaymentEvent {
 enum ShieldedPool {
   orchard
   sapling
+  /// NU6.3 pool. Shares Orchard's keys and addresses; notes use plaintext version 3.
+  ironwood
   transparent
 }
 
@@ -399,4 +401,34 @@ model RateLimitBucket {
   @@id([key, windowStart])
   @@index([windowStart])
   @@map("rate_limit_bucket")
+}
+
+/// Scanner progress per network. One row per network; the lease columns make
+/// sure only one server instance scans at a time.
+model ChainCursor {
+  network         Network   @id
+  /// Last block scanned (inclusive) and its hash, for reorg detection.
+  height          Int
+  hash            String
+  /// Start time of the last complete pass (blocks up to the tip, then the mempool).
+  /// A testnet request only expires once a complete pass that began after its
+  /// deadline has found nothing, so a slow scanner can never expire a paid request.
+  observedThrough DateTime?
+  lockedUntil     DateTime?
+  lockOwner       String?
+  updatedAt       DateTime  @updatedAt
+
+  @@map("chain_cursor")
+}
+
+/// Recent block hashes, so a reorg can be traced back to the fork point.
+model ChainBlock {
+  network  Network
+  height   Int
+  hash     String
+  prevHash String
+  time     DateTime
+
+  @@id([network, height])
+  @@map("chain_block")
 }

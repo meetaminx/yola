@@ -15,6 +15,7 @@ import type { EvidenceKind, PaymentStatus } from "./types";
  *   underpaid        → payment_detected    (a further matching output was observed)
  *   confirming       → payment_detected    (reorg: transaction lost depth)
  *   payment_detected → awaiting_payment    (reorg / dropped from mempool)
+ *   underpaid        → awaiting_payment    (reorg / dropped: the partial payment vanished)
  *   *                → verification_required (the adapter cannot establish the facts,
  *                                            or a payment arrived after expiry/cancel)
  */
@@ -46,6 +47,7 @@ export const TRANSITIONS: Readonly<
   },
   underpaid: {
     payment_detected: ["observation"],
+    awaiting_payment: ["reorg"],
     expired: ["clock"],
     verification_required: ["observation", "operator"],
   },
