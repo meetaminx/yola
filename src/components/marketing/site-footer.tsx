@@ -66,7 +66,12 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="mx-auto flex max-w-[1200px] flex-wrap justify-between gap-3 border-t border-line px-5 py-6 text-xs text-faint md:px-8">
-        <p>Yola is pre-release software. Production use requires a security review.</p>
+        <p>
+          Yola is pre-release software. Production use requires a security review.{" "}
+          <Link href="/privacy" className="text-muted hover:text-text">Privacy</Link>
+          <span aria-hidden className="mx-2">/</span>
+          <Link href="/terms" className="text-muted hover:text-text">Terms</Link>
+        </p>
         <p>Not affiliated with the Electric Coin Company or the Zcash Foundation.</p>
       </div>
     </footer>

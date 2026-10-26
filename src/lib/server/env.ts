@@ -37,6 +37,8 @@ const schema = z
     /** "inline": the web server runs the job loop. "cron": only /api/internal/jobs runs jobs. "off": neither. */
     YOLA_JOBS_MODE: z.enum(["inline", "cron", "off"]).default("inline"),
     YOLA_CRON_SECRET: z.string().min(32).optional().or(z.literal("").transform(() => undefined)),
+    /** Vercel sends this as "Authorization: Bearer <CRON_SECRET>" on scheduled calls. Accepted in place of YOLA_CRON_SECRET. */
+    CRON_SECRET: z.string().min(32).optional().or(z.literal("").transform(() => undefined)),
     /** Development only: allow webhook URLs on localhost and private networks. */
     YOLA_WEBHOOK_ALLOW_PRIVATE_NETWORKS: bool,
     /** Trust X-Forwarded-For for client IPs. Enable only behind a proxy you control that sets it. */
@@ -80,8 +82,8 @@ const schema = z
     if (env.NODE_ENV === "production" && env.YOLA_DISABLE_RATE_LIMIT) {
       ctx.addIssue({ code: "custom", path: ["YOLA_DISABLE_RATE_LIMIT"], message: "must not be enabled in production" });
     }
-    if (env.YOLA_JOBS_MODE === "cron" && !env.YOLA_CRON_SECRET) {
-      ctx.addIssue({ code: "custom", path: ["YOLA_CRON_SECRET"], message: "is required when YOLA_JOBS_MODE=cron" });
+    if (env.YOLA_JOBS_MODE === "cron" && !env.YOLA_CRON_SECRET && !env.CRON_SECRET) {
+      ctx.addIssue({ code: "custom", path: ["YOLA_CRON_SECRET"], message: "(or CRON_SECRET on Vercel) is required when YOLA_JOBS_MODE=cron" });
     }
     const appUrl = new URL(env.YOLA_PUBLIC_APP_URL);
     const isLocalhost = appUrl.hostname === "localhost" || appUrl.hostname === "127.0.0.1";

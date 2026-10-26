@@ -7,6 +7,7 @@ import { db } from "@/lib/server/db";
 import { getEnv } from "@/lib/server/env";
 import { jsonResponse } from "@/lib/server/http";
 import { serverPaymentService } from "@/lib/server/payments";
+import { kickJobs } from "@/lib/server/kick";
 import { prefixedId } from "@/lib/utils/ids";
 
 /**
@@ -39,6 +40,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/dashboard/proje
     const parsed = Call.safeParse(await req.json().catch(() => null));
     if (!parsed.success) throw new ApiError(422, "invalid_request", "Malformed playground call.");
     const result = await dispatchPaymentRoute(serverPaymentService(), { projectId, allowedNetworks: ["demo", "testnet"] }, parsed.data);
+    if (parsed.data.method === "POST" && result.status < 400) kickJobs();
     return jsonResponse(200, {
       status: result.status,
       headers: { "x-request-id": requestId, ...(result.replayed ? { "idempotent-replayed": "true" } : {}) },

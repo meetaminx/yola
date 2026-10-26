@@ -195,4 +195,21 @@ describe("cron endpoint", () => {
       resetEnvCache();
     }
   });
+
+  it("accepts Vercel Cron's GET with CRON_SECRET", async () => {
+    process.env.CRON_SECRET = "v".repeat(40);
+    process.env.YOLA_JOBS_MODE = "cron";
+    resetEnvCache();
+    try {
+      const no = await cron.GET(new Request("http://localhost/api/internal/jobs"));
+      expect(no.status).toBe(401);
+      const ok = await cron.GET(new Request("http://localhost/api/internal/jobs", { headers: { Authorization: `Bearer ${"v".repeat(40)}` } }));
+      expect(ok.status).toBe(200);
+      expect(await ok.json()).toMatchObject({ deliveries: 0, expired: 0 });
+    } finally {
+      delete process.env.CRON_SECRET;
+      process.env.YOLA_JOBS_MODE = "off";
+      resetEnvCache();
+    }
+  });
 });

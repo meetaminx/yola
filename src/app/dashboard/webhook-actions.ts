@@ -1,5 +1,6 @@
 "use server";
 
+import { kickJobs } from "@/lib/server/kick";
 import { z } from "zod";
 import { ApiError } from "@/lib/api/errors";
 import { audit } from "@/lib/server/audit";
@@ -130,6 +131,7 @@ export async function sendTestEventAction(projectId: string, endpointId: string)
     const { user } = await requireProjectAccess(projectId);
     const r = await queueTestEvent(db(), projectId, { endpoint_id: endpointId });
     await audit(db(), { projectId, actor: { type: "user", id: user.id }, action: "webhook.test_sent", target: { type: "webhook_event", id: r.event_id } });
+    kickJobs();
     return { ok: true, eventId: r.event_id };
   } catch (err) {
     return fail(err);
@@ -145,6 +147,7 @@ export async function redeliverAction(projectId: string, deliveryId: string): Pr
     });
     if (r.count !== 1) return { ok: false, error: "That delivery is already queued or no longer exists." };
     await audit(db(), { projectId, actor: { type: "user", id: user.id }, action: "webhook.redelivery_requested", target: { type: "webhook_delivery", id: deliveryId } });
+    kickJobs();
     return { ok: true };
   } catch (err) {
     return fail(err);

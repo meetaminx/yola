@@ -1,4 +1,5 @@
 import "server-only";
+import { kickJobs } from "./kick";
 import { ApiError } from "@/lib/api/errors";
 import { prefixedId } from "@/lib/utils/ids";
 import { authenticateApiKey, type ApiKeyContext } from "./api-keys";
@@ -95,6 +96,7 @@ export function v1(handler: (req: Request, ctx: V1Context) => Promise<V1Result>,
       }
       const result = await handler(req, { requestId, auth, prisma });
       status = result.status;
+      if (req.method !== "GET" && result.status < 400) kickJobs();
       return jsonResponse(result.status, result.body, {
         "X-Request-Id": requestId,
         ...(limit ? rateLimitHeaders(limit) : {}),

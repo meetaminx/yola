@@ -8,6 +8,7 @@ import { serializePayment } from "@/lib/payments/service";
 import { createApiKey } from "@/lib/server/api-keys";
 import { audit } from "@/lib/server/audit";
 import { db } from "@/lib/server/db";
+import { kickJobs } from "@/lib/server/kick";
 import { serverPaymentService } from "@/lib/server/payments";
 import { PROJECT_COOKIE, requireProjectAccess, requireUser } from "@/lib/server/session";
 import { prefixedId } from "@/lib/utils/ids";
@@ -167,6 +168,7 @@ export async function cancelPaymentAction(projectId: string, paymentId: string):
       action: "payment_request.cancelled",
       target: { type: "payment_request", id: paymentId },
     });
+    kickJobs();
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -178,6 +180,7 @@ export async function simulatePaymentAction(projectId: string, paymentId: string
     await requireProjectAccess(projectId);
     if (!(SIMULATE_ACTIONS as readonly string[]).includes(action)) return { ok: false, error: "Unknown simulator action." };
     const r = await serverPaymentService().simulate({ projectId, allowedNetworks: ["demo", "testnet"] }, paymentId, { action });
+    kickJobs();
     return { ok: true, status: serializePayment(r.body).status };
   } catch (err) {
     return fail(err);

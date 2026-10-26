@@ -126,6 +126,13 @@ export function AuthForm({ mode, github }: { mode: "sign-in" | "sign-up"; github
         <Button type="submit" size="lg" loading={pending} className="mt-2 w-full">
           {mode === "sign-in" ? "Sign in" : "Create account"}
         </Button>
+        {mode === "sign-up" && (
+          <p className="text-xs leading-relaxed text-faint">
+            By creating an account you agree to the{" "}
+            <Link href="/terms" className="text-muted underline-offset-2 hover:underline">terms of service</Link> and{" "}
+            <Link href="/privacy" className="text-muted underline-offset-2 hover:underline">privacy policy</Link>.
+          </p>
+        )}
       </form>
 
       <p className="mt-6 text-sm text-muted">

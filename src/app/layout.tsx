@@ -27,8 +27,8 @@ const jetbrainsMono = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "Yola — Zcash payments. Built for builders.",
-    template: "%s · Yola",
+    default: "Yola: Zcash payments. Built for builders.",
+    template: "%s | Yola",
   },
   description:
     "Payment requests, QR codes, transaction tracking and integration tools for accepting ZEC in your website or application.",
